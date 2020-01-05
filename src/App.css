@@ -10,8 +10,8 @@ body {
 .board {
 	position: relative;
 
-	width: 3200px;
-	height: 1800px;
+	width: 740px;
+	height: 600px;
 
 	border: 1px solid yellow;
 }
@@ -37,8 +37,8 @@ body {
 
 	/* border-radius: 100%; */
 
-	width: 25px;
-	height: 25px;
+	width: 10px;
+	height: 10px;
 
 	background-color: blue;
 

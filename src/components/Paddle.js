@@ -1,7 +1,7 @@
 import React from 'react';
 
-const PADDLE_WIDTH = 200;
-const PADDLE_HEIGHT = 25;
+const PADDLE_WIDTH = 50;
+const PADDLE_HEIGHT = 20;
 
 const Paddle = ({ x, y }) => {
 	const paddleStyle = {

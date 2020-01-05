@@ -1,7 +1,7 @@
 import React from 'react';
 
-const BLOCK_WIDTH = 400;
-const BLOCK_HEIGHT = 200;
+const BLOCK_WIDTH = 100;
+const BLOCK_HEIGHT = 50;
 
 const Block = ({ x, y }) => {
 	const blockStyle = {

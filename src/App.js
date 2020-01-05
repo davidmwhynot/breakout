@@ -9,24 +9,24 @@ import Paddle from './components/Paddle';
 import './App.css';
 
 // game globals
-const TIMEOUT = 10;
-const TIME = 25;
+const TIMEOUT = 5;
+const TIME = 10;
 
-const BOARD_WIDTH = 3200;
-const BOARD_HEIGHT = 1800;
+const BOARD_WIDTH = 740;
+const BOARD_HEIGHT = 600;
 
-const BLOCK_WIDTH = 400;
-const BLOCK_HEIGHT = 200;
-const BLOCK_PADDING = 50;
+const BLOCK_WIDTH = 100;
+const BLOCK_HEIGHT = 60;
+const BLOCK_PADDING = 20;
 
 const BLOCK_ROWS = 3;
-const BLOCK_COLS = 7;
+const BLOCK_COLS = 6;
 
-const BALL_WIDTH = 25;
-const BALL_HEIGHT = 25;
+const BALL_WIDTH = 10;
+const BALL_HEIGHT = 10;
 
-const PADDLE_WIDTH = 200;
-const PADDLE_HEIGHT = 25;
+const PADDLE_WIDTH = 50;
+const PADDLE_HEIGHT = 20;
 
 class App extends Component {
 	state = {
