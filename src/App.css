@@ -1,0 +1,46 @@
+body {
+	background-color: #232323;
+	color: #f0f0f0;
+	padding: 50px;
+
+	width: 100vw;
+	height: 100vh;
+}
+
+.board {
+	position: relative;
+
+	width: 3200px;
+	height: 1800px;
+
+	border: 1px solid yellow;
+}
+
+.block {
+	position: absolute;
+
+	background-color: red;
+
+	border: 1px solid rgba(0, 0, 0, 0);
+}
+
+.paddle {
+	position: absolute;
+
+	background-color: green;
+
+	border: 1px solid rgba(0, 0, 0, 0);
+}
+
+.ball {
+	position: absolute;
+
+	/* border-radius: 100%; */
+
+	width: 25px;
+	height: 25px;
+
+	background-color: blue;
+
+	border: 1px solid rgba(0, 0, 0, 0);
+}
