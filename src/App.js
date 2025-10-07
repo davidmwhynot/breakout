@@ -1,60 +1,76 @@
 import React, { Component } from 'react';
 
 // game object component imports
-import Block from './components/Block';
-import Ball from './components/Ball';
-import Paddle from './components/Paddle';
 
 // style imports
 import './App.css';
 
 // game globals
-const TIMEOUT = 5;
-const TIME = 10;
+const BOARD_WIDTH = 3640;
+const BOARD_HEIGHT = 1800;
 
-const BOARD_WIDTH = 740;
-const BOARD_HEIGHT = 600;
+const PADDLE_HEIGHT = 10;
 
-const BLOCK_WIDTH = 100;
-const BLOCK_HEIGHT = 60;
-const BLOCK_PADDING = 20;
+const STATE = {
+	hits: 0,
+	framesPassed: 0,
+	numHits: 0,
 
-const BLOCK_ROWS = 3;
-const BLOCK_COLS = 6;
+	acceleration: 10,
 
-const BALL_WIDTH = 10;
-const BALL_HEIGHT = 10;
+	TIMEOUT: 1,
+	TIME: 5,
 
-const PADDLE_WIDTH = 50;
-const PADDLE_HEIGHT = 20;
+	BOARD_WIDTH: BOARD_WIDTH,
+	BOARD_HEIGHT: BOARD_HEIGHT,
+
+	BLOCK_WIDTH: 100,
+	BLOCK_HEIGHT: 50,
+	BLOCK_PADDING: 10,
+
+	BLOCK_ROWS: 5,
+	BLOCK_COLS: 33,
+
+	BALL_WIDTH: 10,
+	BALL_HEIGHT: 10,
+
+	PADDLE_WIDTH: 200,
+	PADDLE_HEIGHT: PADDLE_HEIGHT,
+	eventLoop: {
+		running: false
+	},
+	blocks: [],
+	ball: {
+		x: BOARD_WIDTH / 2,
+		y: BOARD_HEIGHT / 2,
+		velocity: {
+			x: 0,
+			y: 1
+		}
+	},
+	paddle: {
+		x: BOARD_WIDTH / 2,
+		y: BOARD_HEIGHT - PADDLE_HEIGHT
+	},
+	game: {
+		over: false,
+		won: false
+	}
+};
 
 class App extends Component {
-	state = {
-		x: 0,
-		eventLoop: {
-			running: false
-		},
-		blocks: [],
-		ball: {
-			x: BOARD_WIDTH / 2,
-			y: BOARD_HEIGHT / 2,
-			velocity: {
-				x: 0,
-				y: 1
-			}
-		},
-		paddle: {
-			x: BOARD_WIDTH / 2,
-			y: BOARD_HEIGHT - PADDLE_HEIGHT
-		},
-		game: {
-			over: false,
-			won: false
-		}
-	};
+	state = STATE;
 
 	constructor(props) {
 		super(props);
+
+		const {
+			BLOCK_WIDTH,
+			BLOCK_HEIGHT,
+			BLOCK_PADDING,
+			BLOCK_ROWS,
+			BLOCK_COLS
+		} = this.state;
 
 		let id = 0;
 		for (let row = 0; row < BLOCK_ROWS; ++row) {
@@ -67,6 +83,8 @@ class App extends Component {
 				++id;
 			}
 		}
+
+		this.state.INIT_BLOCKS = this.state.blocks.length;
 	}
 
 	toggleEventLoop = async () => {
@@ -89,6 +107,24 @@ class App extends Component {
 	};
 
 	eventLoop = async () => {
+		// console.log(this.state);
+		// console.log(a - this.state.lastA);
+		const {
+			TIMEOUT,
+			TIME,
+			BOARD_WIDTH,
+			BOARD_HEIGHT,
+
+			BLOCK_WIDTH,
+			BLOCK_HEIGHT,
+
+			BALL_WIDTH,
+			BALL_HEIGHT,
+
+			PADDLE_WIDTH,
+			PADDLE_HEIGHT
+		} = this.state;
+
 		if (this.state.eventLoop.running) {
 			const { blocks, ball, paddle } = this.state;
 
@@ -98,11 +134,13 @@ class App extends Component {
 					game: { over: true, won: true },
 					eventLoop: { ...this.state.eventLoop, running: false }
 				});
-			} else if (ball.y === BOARD_HEIGHT - BALL_HEIGHT) {
+				this.draw();
+			} else if (ball.y >= BOARD_HEIGHT - BALL_HEIGHT) {
 				this.setState({
 					game: { over: true, won: false },
 					eventLoop: { ...this.state.eventLoop, running: false }
 				});
+				this.draw();
 			} else {
 				let ballVelocity = ball.velocity;
 				let newBlocks = blocks;
@@ -114,12 +152,27 @@ class App extends Component {
 					ball.y <= paddle.y + PADDLE_HEIGHT &&
 					ball.y + BALL_HEIGHT >= paddle.y
 				) {
-					const newX = Math.random();
-					const xSign = ballVelocity.x >= 0;
-					if (xSign) {
-						ballVelocity.x = newX;
+					// const xSign = ballVelocity.x >= 0;
+					// if (xSign) {
+					// 	ballVelocity.x = newX;
+					// } else {
+					// 	ballVelocity.x = newX * -1;
+					// }
+
+					// get hit distance from center of paddle
+					const ballDistance = Math.abs(
+						ball.x + BALL_WIDTH / 2 - (paddle.x + PADDLE_WIDTH / 2)
+					);
+					const deltaX = ballDistance / PADDLE_WIDTH / 2;
+
+					const newX = Math.random() * 0.5;
+
+					const isLeftHit =
+						ball.x + BALL_WIDTH / 2 < paddle.x + PADDLE_WIDTH / 2;
+					if (isLeftHit) {
+						ballVelocity.x = Math.min(1, newX + deltaX) * -1;
 					} else {
-						ballVelocity.x = newX * -1;
+						ballVelocity.x = Math.min(1, newX + deltaX);
 					}
 
 					ballVelocity.y *= -1;
@@ -136,6 +189,9 @@ class App extends Component {
 				}
 
 				// check if ball is going to hit a block
+				let newTimeout = TIMEOUT;
+				let hitCounter = this.state.numHits;
+				let gotHit = false;
 				for (const block of blocks) {
 					if (
 						ball.x <= block.x + BLOCK_WIDTH &&
@@ -157,28 +213,65 @@ class App extends Component {
 						newBlocks = newBlocks.filter(
 							({ id }) => id !== block.id
 						);
+
+						// ballVelocity.y += ballVelocity.y >= 0 ? 0.1 : -0.1;
+
+						console.log('timeout: ', TIMEOUT);
+						++hitCounter;
+						if (hitCounter > this.state.acceleration) {
+							++newTimeout;
+							hitCounter = 0;
+						}
+						gotHit = true;
+
 						break;
 					}
 				}
 
-				this.setState({
-					x: ++this.state.x,
-					ball: {
-						x: Math.round(ball.x + TIME * ball.velocity.x),
-						y: Math.round(ball.y + TIME * ball.velocity.y),
-						velocity: ballVelocity
-					},
-					blocks: newBlocks
-				});
+				if (this.state.framesPassed > TIMEOUT) {
+					this.setState({
+						// lastA: a,
+						hits: gotHit ? this.state.hits + 1 : this.state.hits,
+						numHits: hitCounter,
+						TIMEOUT: newTimeout,
+						framesPassed: 0,
+						ball: {
+							x: Math.round(ball.x + TIME * ball.velocity.x),
+							y: Math.round(ball.y + TIME * ball.velocity.y),
+							velocity: ballVelocity
+						},
+						blocks: newBlocks
+					});
+					this.draw();
 
-				setTimeout(() => {
 					window.requestAnimationFrame(this.eventLoop);
-				}, TIMEOUT);
+				} else {
+					this.setState({
+						hits: gotHit ? this.state.hits + 1 : this.state.hits,
+						TIMEOUT: newTimeout,
+						numHits: hitCounter,
+						framesPassed: ++this.state.framesPassed,
+						ball: {
+							x: Math.round(ball.x + TIME * ball.velocity.x),
+							y: Math.round(ball.y + TIME * ball.velocity.y),
+							velocity: ballVelocity
+						},
+						blocks: newBlocks
+					});
+
+					this.eventLoop();
+				}
+				// setTimeout(() => {
+				// 	// for (let i = 0; i < 2; ++i) {
+				// 	// }
+				// }, TIMEOUT);
 			}
 		}
 	};
 
 	movePaddle = e => {
+		const { BOARD_WIDTH, PADDLE_WIDTH } = this.state;
+
 		if (this.state.eventLoop.running) {
 			const x = e.pageX - 50 - PADDLE_WIDTH / 2;
 			if (x + PADDLE_WIDTH < BOARD_WIDTH && x > 0) {
@@ -188,7 +281,22 @@ class App extends Component {
 	};
 
 	reset = () => {
+		const {
+			BOARD_WIDTH,
+			BOARD_HEIGHT,
+
+			BLOCK_ROWS,
+			BLOCK_COLS,
+			BLOCK_PADDING,
+
+			BLOCK_WIDTH,
+			BLOCK_HEIGHT,
+
+			PADDLE_HEIGHT
+		} = this.state;
+
 		const blocks = [];
+
 		let id = 0;
 		for (let row = 0; row < BLOCK_ROWS; ++row) {
 			for (let col = 0; col < BLOCK_COLS; ++col) {
@@ -201,62 +309,101 @@ class App extends Component {
 			}
 		}
 
-		this.setState({
-			x: 0,
-			eventLoop: {
-				running: true
-			},
-			blocks,
-			ball: {
-				x: BOARD_WIDTH / 2,
-				y: BOARD_HEIGHT / 2,
-				velocity: {
-					x: 0,
-					y: 1
-				}
-			},
-			paddle: {
-				x: BOARD_WIDTH / 2,
-				y: BOARD_HEIGHT - PADDLE_HEIGHT
-			},
-			game: {
-				over: false,
-				won: false
-			}
-		});
+		this.setState({ ...STATE, blocks, eventLoop: { running: true } });
 
 		window.requestAnimationFrame(this.eventLoop);
 	};
 
+	componentDidMount = () => {
+		const canvas = document.getElementById('canvas');
+		this.ctx = canvas.getContext('2d');
+
+		this.draw();
+	};
+
+	shouldComponentUpdate = (nextProps, nextState) => {
+		const {
+			BOARD_WIDTH,
+			BOARD_HEIGHT,
+			eventLoop: { running },
+			game: { over, won },
+			hits
+		} = this.state;
+
+		const {
+			BOARD_WIDTH: next_BOARD_WIDTH,
+			BOARD_HEIGHT: next_BOARD_HEIGHT,
+			eventLoop: { running: next_running },
+			game: { over: next_over, won: next_won },
+			hits: next_hits
+		} = nextState;
+
+		return (
+			BOARD_WIDTH !== next_BOARD_WIDTH ||
+			BOARD_HEIGHT !== next_BOARD_HEIGHT ||
+			running !== next_running ||
+			over !== next_over ||
+			won !== next_won ||
+			hits !== next_hits
+		);
+	};
+
+	draw = () => {
+		this.ctx.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+
+		this.ctx.lineWidth = 1;
+
+		const {
+			BALL_WIDTH,
+			BALL_HEIGHT,
+			PADDLE_WIDTH,
+			PADDLE_HEIGHT,
+			BLOCK_WIDTH,
+			BLOCK_HEIGHT,
+			ball,
+			blocks,
+			paddle
+		} = this.state;
+
+		// draw ball
+		this.rectangle('blue', ball.x, ball.y, BALL_WIDTH, BALL_HEIGHT);
+
+		// draw paddle
+		this.rectangle(
+			'green',
+			paddle.x,
+			paddle.y,
+			PADDLE_WIDTH,
+			PADDLE_HEIGHT
+		);
+
+		// draw blocks
+		for (const block of blocks) {
+			this.rectangle('red', block.x, block.y, BLOCK_WIDTH, BLOCK_HEIGHT);
+		}
+	};
+
+	rectangle = (color, x, y, width, height) => {
+		this.ctx.fillStyle = color;
+
+		this.ctx.fillRect(x, y, width, height);
+	};
+
 	render() {
-		// console.log(JSON.stringify(this.state, null, '\t'));
+		const { BOARD_WIDTH, BOARD_HEIGHT } = this.state;
+
 		return (
 			<div className="app">
-				<button
-					className="btn btn-primary btn-lg mr-3"
-					onClick={this.toggleEventLoop}
-				>
-					{this.state.eventLoop.running ? 'Stop' : 'Start'}
-				</button>
+				<h1 className="hits">Hits: {this.state.hits}</h1>
 
-				<button className="btn btn-primary btn-lg" onClick={this.reset}>
-					Reset
-				</button>
-
-				<h1>ball x: {this.state.ball.x}</h1>
-				<h1>ball y: {this.state.ball.y}</h1>
-
-				<div
-					className="board"
+				<canvas
+					className="board d-block my-5"
+					id="canvas"
 					onMouseMove={this.movePaddle}
 					onClick={this.reset}
-				>
-					{this.state.blocks.map(({ x, y, id }) => (
-						<Block x={x} y={y} key={id} />
-					))}
-					<Paddle x={this.state.paddle.x} y={this.state.paddle.y} />
-					<Ball x={this.state.ball.x} y={this.state.ball.y} />
-				</div>
+					width={BOARD_WIDTH}
+					height={BOARD_HEIGHT}
+				></canvas>
 			</div>
 		);
 	}

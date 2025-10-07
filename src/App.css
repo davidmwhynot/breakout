@@ -7,11 +7,16 @@ body {
 	height: 100vh;
 }
 
+.boards {
+	display: flex;
+}
+
+.board-container {
+	border: 1px solid orange;
+}
+
 .board {
 	position: relative;
-
-	width: 740px;
-	height: 600px;
 
 	border: 1px solid yellow;
 }
@@ -37,10 +42,13 @@ body {
 
 	/* border-radius: 100%; */
 
-	width: 10px;
-	height: 10px;
-
 	background-color: blue;
 
 	border: 1px solid rgba(0, 0, 0, 0);
+}
+
+.hits {
+	position: absolute;
+	bottom: 15px;
+	right: 15px;
 }
